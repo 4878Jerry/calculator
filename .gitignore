@@ -1,0 +1,25 @@
+# Visual Studio 缓存与用户设置
+.vs/
+*.suo
+*.user
+*.VC.db
+
+# 编译输出
+x64/
+Debug/
+Release/
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.tlog
+*.recipe
+*.log
+*.exe
+*.dll
+*.lib
+*.pch
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db

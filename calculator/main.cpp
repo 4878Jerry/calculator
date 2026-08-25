@@ -13,6 +13,7 @@ namespace {
 // ---------- 全局状态 ----------
 HINSTANCE g_hInst = nullptr;
 std::string g_expr;                  // 当前正在编辑的表达式(ASCII)
+HFONT g_hDisplayFont = nullptr;      // 表达式显示框字体(WM_DESTROY 时释放)
 
 const char*    kHistoryFile = "history.txt";
 const wchar_t* kMainClassName = L"CalcGuiMainWnd";
@@ -51,7 +52,17 @@ const int DISPLAY_H = 36, RESULT_H = 22, SPACE = 8;
 const int CLIENT_W = MARGIN * 2 + COLS * BTN_W + (COLS - 1) * GAP;
 const int CLIENT_H = MARGIN + DISPLAY_H + SPACE + RESULT_H + SPACE + ROWS * BTN_H + (ROWS - 1) * GAP + MARGIN;
 
+// 历史窗口布局
 const int HIST_W = 400, HIST_H = 390;
+const int HIST_MARGIN = 12;
+const int HIST_SEARCH_W = 240, HIST_SEARCH_H = 26;
+const int HIST_SEARCH_BTN_X = HIST_MARGIN + HIST_SEARCH_W + 4;   // 256
+const int HIST_BTN_W = 64, HIST_BTN_H = 30;
+const int HIST_LIST_TOP = HIST_MARGIN + HIST_SEARCH_H + 10;      // 48
+const int HIST_LIST_W = HIST_W - 2 * HIST_MARGIN;                // 376
+const int HIST_LIST_H = 290;
+const int HIST_ACTION_Y = HIST_LIST_TOP + HIST_LIST_H + 8;       // 346
+const int HIST_ACTION_W = 96, HIST_ACTION_H = 32;
 
 // ---------- 编码转换(核心用 ASCII/UTF-8,界面用 UTF-16) ----------
 std::wstring utf8ToWide(const std::string& s) {
@@ -135,8 +146,8 @@ void setResultText(HWND hwnd, const std::string& text) {
 
 void evaluateExpr(HWND hwnd) {
     if (g_expr.empty()) return;
+    static Calculator calc;   // 核心求值器无状态, 复用单个实例
     try {
-        Calculator calc;
         double result = calc.evaluate(g_expr);
         setResultText(hwnd, "= " + formatNumber(result));
         appendHistory(g_expr, result);
@@ -169,32 +180,30 @@ void handleButton(HWND hwnd, int idx) {
 }
 
 // ---------- 历史窗口 ----------
-void refreshHistoryList(HWND hwnd) {
+// 把历史记录填充到列表;keyword 非空时只保留包含关键字的记录。
+// 行首序号(i+1)是记录在文件中的原始位置, 删除时据此定位。
+void populateHistoryList(HWND hwnd, const std::string& keyword) {
     HWND list = GetDlgItem(hwnd, IDH_LIST);
     SendMessageW(list, LB_RESETCONTENT, 0, 0);
     auto recs = loadHistory();
     for (size_t i = 0; i < recs.size(); ++i) {
+        if (!keyword.empty() && recs[i].find(keyword) == std::string::npos)
+            continue;
         std::wstring line = utf8ToWide(std::to_string(i + 1) + ". " + recs[i]);
         int idx = (int)SendMessageW(list, LB_ADDSTRING, 0, (LPARAM)line.c_str());
-        SendMessageW(list, LB_SETITEMDATA, idx, (LPARAM)(i + 1));   // 记住原始序号
+        SendMessageW(list, LB_SETITEMDATA, idx, (LPARAM)(i + 1));
     }
 }
 
-void searchHistory(HWND hwnd) {
-    wchar_t buf[256];
-    GetDlgItemTextW(hwnd, IDH_SEARCH, buf, 256);
-    std::string kw = wideToUtf8(buf);
+void refreshHistoryList(HWND hwnd) { populateHistoryList(hwnd, ""); }
 
-    HWND list = GetDlgItem(hwnd, IDH_LIST);
-    SendMessageW(list, LB_RESETCONTENT, 0, 0);
-    auto recs = loadHistory();
-    for (size_t i = 0; i < recs.size(); ++i) {
-        if (recs[i].find(kw) != std::string::npos) {
-            std::wstring line = utf8ToWide(std::to_string(i + 1) + ". " + recs[i]);
-            int idx = (int)SendMessageW(list, LB_ADDSTRING, 0, (LPARAM)line.c_str());
-            SendMessageW(list, LB_SETITEMDATA, idx, (LPARAM)(i + 1));
-        }
+// 弹出确认框询问是否清空历史;返回是否已确认清空。
+bool confirmClearHistory(HWND hwnd) {
+    if (loadHistory().empty()) {
+        MessageBoxW(hwnd, L"暂无历史记录。", L"提示", MB_ICONINFORMATION);
+        return false;
     }
+    return MessageBoxW(hwnd, L"确定要清空所有历史记录吗?", L"确认", MB_YESNO | MB_ICONWARNING) == IDYES;
 }
 
 void deleteSelectedHistory(HWND hwnd) {
@@ -214,12 +223,7 @@ void deleteSelectedHistory(HWND hwnd) {
 }
 
 void clearHistory(HWND hwnd) {
-    auto recs = loadHistory();
-    if (recs.empty()) {
-        MessageBoxW(hwnd, L"暂无历史记录。", L"提示", MB_ICONINFORMATION);
-        return;
-    }
-    if (MessageBoxW(hwnd, L"确定要清空所有历史记录吗?", L"确认", MB_YESNO | MB_ICONWARNING) == IDYES) {
+    if (confirmClearHistory(hwnd)) {
         saveHistory({});
         refreshHistoryList(hwnd);
     }
@@ -229,26 +233,38 @@ LRESULT CALLBACK HistWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
         case WM_CREATE: {
             CreateWindowW(L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-                12, 12, 240, 26, hwnd, (HMENU)IDH_SEARCH, g_hInst, nullptr);
+                HIST_MARGIN, HIST_MARGIN, HIST_SEARCH_W, HIST_SEARCH_H,
+                hwnd, (HMENU)IDH_SEARCH, g_hInst, nullptr);
             CreateWindowW(L"BUTTON", L"搜索", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                256, 10, 64, 30, hwnd, (HMENU)IDH_BTN_SEARCH, g_hInst, nullptr);
+                HIST_SEARCH_BTN_X, HIST_MARGIN - 2, HIST_BTN_W, HIST_BTN_H,
+                hwnd, (HMENU)IDH_BTN_SEARCH, g_hInst, nullptr);
             CreateWindowW(L"BUTTON", L"全部", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                324, 10, 64, 30, hwnd, (HMENU)IDH_BTN_ALL, g_hInst, nullptr);
+                HIST_SEARCH_BTN_X + HIST_BTN_W + 4, HIST_MARGIN - 2, HIST_BTN_W, HIST_BTN_H,
+                hwnd, (HMENU)IDH_BTN_ALL, g_hInst, nullptr);
             CreateWindowW(L"LISTBOX", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
-                12, 48, 376, 290, hwnd, (HMENU)IDH_LIST, g_hInst, nullptr);
+                HIST_MARGIN, HIST_LIST_TOP, HIST_LIST_W, HIST_LIST_H,
+                hwnd, (HMENU)IDH_LIST, g_hInst, nullptr);
             CreateWindowW(L"BUTTON", L"删除选中", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                12, 346, 96, 32, hwnd, (HMENU)IDH_BTN_DELETE, g_hInst, nullptr);
+                HIST_MARGIN, HIST_ACTION_Y, HIST_ACTION_W, HIST_ACTION_H,
+                hwnd, (HMENU)IDH_BTN_DELETE, g_hInst, nullptr);
             CreateWindowW(L"BUTTON", L"清空", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                116, 346, 96, 32, hwnd, (HMENU)IDH_BTN_CLEAR, g_hInst, nullptr);
+                HIST_MARGIN + HIST_ACTION_W + 8, HIST_ACTION_Y, HIST_ACTION_W, HIST_ACTION_H,
+                hwnd, (HMENU)IDH_BTN_CLEAR, g_hInst, nullptr);
             CreateWindowW(L"BUTTON", L"关闭", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                292, 346, 96, 32, hwnd, (HMENU)IDH_BTN_CLOSE, g_hInst, nullptr);
+                HIST_W - HIST_MARGIN - HIST_ACTION_W, HIST_ACTION_Y, HIST_ACTION_W, HIST_ACTION_H,
+                hwnd, (HMENU)IDH_BTN_CLOSE, g_hInst, nullptr);
             refreshHistoryList(hwnd);
             return 0;
         }
         case WM_COMMAND: {
             int id = LOWORD(wp);
             switch (id) {
-                case IDH_BTN_SEARCH: searchHistory(hwnd); break;
+                case IDH_BTN_SEARCH: {
+                    wchar_t buf[256];
+                    GetDlgItemTextW(hwnd, IDH_SEARCH, buf, 256);
+                    populateHistoryList(hwnd, wideToUtf8(buf));
+                    break;
+                }
                 case IDH_BTN_ALL:    refreshHistoryList(hwnd); break;
                 case IDH_BTN_DELETE: deleteSelectedHistory(hwnd); break;
                 case IDH_BTN_CLEAR:  clearHistory(hwnd); break;
@@ -302,9 +318,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             // 表达式显示框
             CreateWindowW(L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT | ES_READONLY,
                 MARGIN, MARGIN, CLIENT_W - 2 * MARGIN, DISPLAY_H, hwnd, (HMENU)IDC_DISPLAY, g_hInst, nullptr);
-            HFONT hFont = CreateFontW(22, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+            g_hDisplayFont = CreateFontW(22, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
                 OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
-            SendMessageW(GetDlgItem(hwnd, IDC_DISPLAY), WM_SETFONT, (WPARAM)hFont, TRUE);
+            SendMessageW(GetDlgItem(hwnd, IDC_DISPLAY), WM_SETFONT, (WPARAM)g_hDisplayFont, TRUE);
 
             // 结果行
             CreateWindowW(L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_RIGHT,
@@ -333,15 +349,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 case IDM_HISTORY_VIEW:
                     showHistory(hwnd);
                     break;
-                case IDM_HISTORY_CLEAR: {
-                    auto recs = loadHistory();
-                    if (recs.empty()) {
-                        MessageBoxW(hwnd, L"暂无历史记录。", L"提示", MB_ICONINFORMATION);
-                    } else if (MessageBoxW(hwnd, L"确定要清空所有历史记录吗?", L"确认", MB_YESNO | MB_ICONWARNING) == IDYES) {
+                case IDM_HISTORY_CLEAR:
+                    // 主窗口无历史列表, 确认后仅清空文件即可
+                    if (confirmClearHistory(hwnd))
                         saveHistory({});
-                    }
                     break;
-                }
                 case IDM_HELP:
                     MessageBoxW(hwnd,
                         L"支持 + - * / ( ) ^ 与一元负号。\n"
@@ -356,6 +368,10 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return 0;
         }
         case WM_DESTROY:
+            if (g_hDisplayFont) {
+                DeleteObject(g_hDisplayFont);
+                g_hDisplayFont = nullptr;
+            }
             PostQuitMessage(0);
             return 0;
     }
@@ -374,13 +390,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     wc.lpszClassName = kMainClassName;
     wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    RegisterClassW(&wc);
+    if (!RegisterClassW(&wc)) return 0;
 
     // 注册历史窗口类
     WNDCLASSW wc2 = wc;
     wc2.lpfnWndProc = HistWndProc;
     wc2.lpszClassName = kHistClassName;
-    RegisterClassW(&wc2);
+    if (!RegisterClassW(&wc2)) return 0;
 
     // 菜单
     HMENU hMenu = CreateMenu();

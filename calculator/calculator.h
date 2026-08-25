@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <stdexcept>
+#include <string>
 
 // 简易计算器核心：四则运算 + 括号 + 一元正负号 + 幂运算(^) + 常用数学函数。
 // 内部使用「表达式二叉树(AST)」与递归下降解析,体现"数据结构(树) + 基础算法"。
