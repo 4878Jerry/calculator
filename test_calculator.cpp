@@ -273,6 +273,49 @@ TEST(function_in_expression) {
 }
 
 // ============================================================================
+// 4.1 自定义底数对数 log_a (双参数 log(底, 真数))
+// 界面上的 log_a 按钮分两步输入: 底数 -> 真数, 最终组成 "log(a,b)" 交给求值核心。
+// 以下测试直接验证求值核心对 "log(a,b)" 的语义。
+// ============================================================================
+
+TEST(log_custom_base_basic) {
+    // log_a(b) = ln(b) / ln(a)
+    CHECK_NEAR(calc("log(2,8)"), 3);
+    CHECK_NEAR(calc("log(2,1024)"), 10);
+    CHECK_NEAR(calc("log(3,27)"), 3);
+    CHECK_NEAR(calc("log(5,25)"), 2);
+    CHECK_NEAR(calc("log(10,100)"), 2);
+    CHECK_NEAR(calc("log(4,16)"), 2);
+}
+
+TEST(log_custom_base_frac_decimal) {
+    // 底数/真数为小数
+    CHECK_NEAR(calc("log(2,16)"), 4);
+    CHECK_NEAR(calc("log(0.5,0.25)"), 2);   // log_(0.5)(0.25) = 2
+    CHECK_NEAR(calc("log(8,2)"), 1.0 / 3.0); // 底数 > 真数, 结果为分数
+    CHECK_NEAR(calc("log(10,0.1)"), -1);    // 真数为小数
+    CHECK_NEAR(calc("log(2,0.5)"), -1);     // 真数 < 1 得负数
+}
+
+TEST(log_custom_base_nested_expr) {
+    // 底数/真数本身可以是复合表达式
+    CHECK_NEAR(calc("log(1+1,2*4)"), 3);    // log_2(8)
+    CHECK_NEAR(calc("log(3,3^3)"), 3);
+    CHECK_NEAR(calc("log(sqrt(4),16)"), 4); // log_2(16)
+    CHECK_NEAR(calc("log(2,8)*2"), 6);      // 与四则运算组合
+}
+
+TEST(log_custom_base_invalid) {
+    CHECK_THROWS(calc("log(1,8)"));    // 底数 = 1
+    CHECK_THROWS(calc("log(0,8)"));    // 底数 = 0
+    CHECK_THROWS(calc("log(-2,8)"));   // 底数 < 0
+    CHECK_THROWS(calc("log(2,0)"));    // 真数 = 0
+    CHECK_THROWS(calc("log(2,-8)"));   // 真数 < 0
+    CHECK_THROWS(calc("log(2,)"));     // 缺真数
+    CHECK_THROWS(calc("log(,8)"));     // 缺底数
+}
+
+// ============================================================================
 // 5. 空白字符 / 小数输入
 // ============================================================================
 

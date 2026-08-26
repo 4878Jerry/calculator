@@ -10,10 +10,20 @@
 
 namespace {
 
+// 自定义底数对数(log_a)的分步输入状态。
+// 用户依次输入: log_a -> 底数 -> log_a -> 真数 -> ')' -> '='。
+// 第一次按下 log_a 输入 "log(", 等待用户输入底数;
+// 第二次按下 log_a 输入 ",", 分隔底数与真数。
+enum class LogInputStage {
+    Normal,        // 不在 log_a 输入流程中
+    AwaitingBase,  // 已输入 "log(", 等待底数及分隔逗号
+};
+
 // ---------- 全局状态 ----------
 HINSTANCE g_hInst = nullptr;
 std::string g_expr;                  // 当前正在编辑的表达式(ASCII)
 HFONT g_hDisplayFont = nullptr;      // 表达式显示框字体(WM_DESTROY 时释放)
+LogInputStage g_logStage = LogInputStage::Normal;  // log_a 分步输入状态
 
 const char*    kHistoryFile = "history.txt";
 const wchar_t* kMainClassName = L"CalcGuiMainWnd";
@@ -119,20 +129,30 @@ std::string formatNumber(double v) {
 }
 
 // ---------- 按钮定义 ----------
-enum BtnAction { ACT_INSERT, ACT_EQUAL, ACT_CLEAR, ACT_BACKSPACE };
+// 按钮动作类型: 决定按下该按钮时 UI 层如何处理。
+enum class BtnAction {
+    Insert,      // 直接向表达式追加一段文本
+    Equal,       // 计算当前表达式
+    Clear,       // 清空表达式
+    Backspace,   // 删除最后一个字符
+    LogBase,     // 自定义底数对数(log_a): 按状态插入 "log(" 或分隔逗号 ","
+};
+
 struct ButtonDef {
     const wchar_t* label;   // 按钮上显示的文字
-    const char*    text;    // ACT_INSERT 时追加到表达式的文本
+    const char*    text;    // BtnAction::Insert 时追加到表达式的文本
     BtnAction      action;
 };
 
+// 6 行 × 5 列按钮布局。其中 "lg" 为常用对数(以 10 为底),
+// "log_a" 为自定义底数对数, 需分两步输入底数与真数。
 const ButtonDef kButtons[COLS * ROWS] = {
-    {L"sin", "sin(", ACT_INSERT},  {L"cos", "cos(", ACT_INSERT}, {L"tan", "tan(", ACT_INSERT}, {L"ln", "ln(", ACT_INSERT},  {L"log", "log(", ACT_INSERT},
-    {L"exp", "exp(", ACT_INSERT},  {L"x²", "^2", ACT_INSERT},     {L"√", "sqrt(", ACT_INSERT}, {L"^", "^", ACT_INSERT},      {L"log_a", "log(", ACT_INSERT},
-    {L"C", nullptr, ACT_CLEAR},    {L"←", nullptr, ACT_BACKSPACE},{L"(", "(", ACT_INSERT},       {L")", ")", ACT_INSERT},      {L"÷", "/", ACT_INSERT},
-    {L"7", "7", ACT_INSERT},       {L"8", "8", ACT_INSERT},       {L"9", "9", ACT_INSERT},       {L"×", "*", ACT_INSERT},      {L"-", "-", ACT_INSERT},
-    {L"4", "4", ACT_INSERT},       {L"5", "5", ACT_INSERT},       {L"6", "6", ACT_INSERT},       {L"+", "+", ACT_INSERT},      {L"=", nullptr, ACT_EQUAL},
-    {L"1", "1", ACT_INSERT},       {L"2", "2", ACT_INSERT},       {L"3", "3", ACT_INSERT},       {L"0", "0", ACT_INSERT},      {L".", ".", ACT_INSERT},
+    {L"sin",   "sin(",   BtnAction::Insert},  {L"cos", "cos(", BtnAction::Insert}, {L"tan", "tan(", BtnAction::Insert}, {L"ln",   "ln(",   BtnAction::Insert}, {L"lg",    "log(",  BtnAction::Insert},
+    {L"exp",   "exp(",   BtnAction::Insert},  {L"x²",  "^2",   BtnAction::Insert}, {L"√",    "sqrt(", BtnAction::Insert}, {L"^",    "^",     BtnAction::Insert}, {L"log_a", nullptr, BtnAction::LogBase},
+    {L"C",     nullptr,  BtnAction::Clear},   {L"←",   nullptr, BtnAction::Backspace},{L"(",   "(",     BtnAction::Insert}, {L")",    ")",     BtnAction::Insert}, {L"÷",    "/",     BtnAction::Insert},
+    {L"7",     "7",      BtnAction::Insert},  {L"8",   "8",     BtnAction::Insert}, {L"9",    "9",     BtnAction::Insert}, {L"×",    "*",     BtnAction::Insert}, {L"-",    "-",     BtnAction::Insert},
+    {L"4",     "4",      BtnAction::Insert},  {L"5",   "5",     BtnAction::Insert}, {L"6",    "6",     BtnAction::Insert}, {L"+",    "+",     BtnAction::Insert}, {L"=",    nullptr, BtnAction::Equal},
+    {L"1",     "1",      BtnAction::Insert},  {L"2",   "2",     BtnAction::Insert}, {L"3",    "3",     BtnAction::Insert}, {L"0",    "0",     BtnAction::Insert}, {L".",    ".",     BtnAction::Insert},
 };
 
 // ---------- 主窗口 UI 辅助 ----------
@@ -142,6 +162,22 @@ void updateDisplay(HWND hwnd) {
 
 void setResultText(HWND hwnd, const std::string& text) {
     SetDlgItemTextW(hwnd, IDC_RESULT, utf8ToWide(text).c_str());
+}
+
+// 向表达式追加文本并刷新显示。
+// 追加内容后旧的结算结果不再有效, 因此一并清空结果框。
+void insertText(HWND hwnd, const std::string& text) {
+    if (text.empty()) return;
+    g_expr += text;
+    setResultText(hwnd, "");
+    updateDisplay(hwnd);
+}
+
+// 清空当前表达式并刷新显示。
+void clearExpression(HWND hwnd) {
+    g_expr.clear();
+    setResultText(hwnd, "");
+    updateDisplay(hwnd);
 }
 
 void evaluateExpr(HWND hwnd) {
@@ -156,24 +192,58 @@ void evaluateExpr(HWND hwnd) {
     }
 }
 
+// 是否属于 log_a 分步输入中的"数字/小数点"按键。
+// 只有在输入底数或真数的数字时, log_a 的输入状态才保持不变,
+// 这样第二次按下 log_a 才会在底数后补上逗号。
+bool isDigitOrDot(const char* text) {
+    if (!text) return false;
+    return std::strchr("0123456789.", text[0]) != nullptr;
+}
+
+// 按下 "log_a" 按钮: 完成自定义底数对数的分步输入。
+//   第一次按下 -> 追加 "log(", 进入"等待底数"状态;
+//   第二次按下 -> 追加 "," 分隔底数与真数, 退出该状态。
+void handleLogBase(HWND hwnd) {
+    if (g_logStage == LogInputStage::AwaitingBase) {
+        insertText(hwnd, ",");
+        g_logStage = LogInputStage::Normal;
+    } else {
+        insertText(hwnd, "log(");
+        g_logStage = LogInputStage::AwaitingBase;
+    }
+}
+
+// 计算结束(log_a 的 ')' 与 '=' 已按下)后重置分步输入状态。
+void resetLogStageIfNeeded() {
+    if (g_logStage != LogInputStage::Normal)
+        g_logStage = LogInputStage::Normal;
+}
+
+// 统一处理一次按钮点击。
 void handleButton(HWND hwnd, int idx) {
     const ButtonDef& b = kButtons[idx];
     switch (b.action) {
-        case ACT_INSERT:
-            g_expr += b.text;
-            setResultText(hwnd, "");
-            updateDisplay(hwnd);
+        case BtnAction::Insert: {
+            // 输入数字/小数点时不打断 log_a 分步状态; 其余输入会退出该状态
+            if (!isDigitOrDot(b.text))
+                resetLogStageIfNeeded();
+            insertText(hwnd, b.text ? b.text : "");
             break;
-        case ACT_CLEAR:
-            g_expr.clear();
-            setResultText(hwnd, "");
-            updateDisplay(hwnd);
+        }
+        case BtnAction::LogBase:
+            handleLogBase(hwnd);
             break;
-        case ACT_BACKSPACE:
+        case BtnAction::Clear:
+            resetLogStageIfNeeded();
+            clearExpression(hwnd);
+            break;
+        case BtnAction::Backspace:
             if (!g_expr.empty()) g_expr.pop_back();
+            resetLogStageIfNeeded();
             updateDisplay(hwnd);
             break;
-        case ACT_EQUAL:
+        case BtnAction::Equal:
+            resetLogStageIfNeeded();
             evaluateExpr(hwnd);
             break;
     }
@@ -357,8 +427,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 case IDM_HELP:
                     MessageBoxW(hwnd,
                         L"支持 + - * / ( ) ^ 与一元负号。\n"
-                        L"函数: sin cos tan(角度)、ln、log(x) 或 log(底,真数)、exp、sqrt。\n\n"
-                        L"示例: 3+4*2   sin(30)   2^10   log(2,8)",
+                        L"函数: sin cos tan(角度)、ln、exp、sqrt。\n"
+                        L"lg: 常用对数(以 10 为底)。\n"
+                        L"log_a: 自定义底数对数, 分两步输入底数与真数:\n"
+                        L"  按 log_a → 输入底数 → 再按 log_a → 输入真数 → ) → =\n\n"
+                        L"示例: 3+4*2   sin(30)   2^10   lg(100)   log_a 2 → log_a 8 → ) → =(得3)",
                         L"使用说明", MB_OK | MB_ICONINFORMATION);
                     break;
                 case IDM_EXIT:
