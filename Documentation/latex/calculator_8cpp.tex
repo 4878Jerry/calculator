@@ -1,0 +1,76 @@
+\hypertarget{calculator_8cpp}{}\doxysection{calculator.\+cpp File Reference}
+\label{calculator_8cpp}\index{calculator.cpp@{calculator.cpp}}
+
+
+简易计算器核心实现  
+
+
+{\ttfamily \#include \char`\"{}calculator.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$cctype$>$}\newline
+{\ttfamily \#include $<$cstdlib$>$}\newline
+{\ttfamily \#include $<$cmath$>$}\newline
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \mbox{\hyperlink{namespace_xE5_x8C_xBF_xE5_x90_x8D}{匿名}}
+\begin{DoxyCompactList}\small\item\em 内部实现命名空间，对外部不可见 \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum \mbox{\hyperlink{calculator_8cpp_afa95821de9590840a05b22bfee959940}{Func\+Type}} 
+\begin{DoxyCompactList}\small\item\em 支持的数学函数类型枚举 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+简易计算器核心实现 
+
+\begin{DoxyAuthor}{Author}
+裴振羽 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+2026-\/08-\/27 
+\end{DoxyDate}
+\begin{DoxyVersion}{Version}
+1.\+0.\+0
+\end{DoxyVersion}
+本文件实现了表达式解析器（\+Parser）和求值器（eval）。 \begin{DoxyVerb}     ## 核心算法：递归下降解析 + 表达式二叉树
+
+     文法定义（优先级从低到高）：
+
+     expression = term { ('+'|'-') term }
+     term       = factor { ('*'|'/') factor }
+     factor     = unary
+     unary      = '-' unary | '+' unary | power
+     power      = primary [ '^' unary ]
+     primary    = number | func '(' args ')' | '(' expression ')'
+     args       = expression [ ',' expression ]
+
+     ## 函数支持
+     | 函数名 | 参数 | 说明 |
+     |--------|------|------|
+     | sin    | x    | 正弦（角度制）|
+     | cos    | x    | 余弦（角度制）|
+     | tan    | x    | 正切（角度制）|
+     | ln     | x    | 自然对数，x > 0 |
+     | log    | x 或 (底,真数) | 常用对数或任意底数对数 |
+     | exp    | x    | e^x |
+     | sqrt   | x    | 平方根，x ≥ 0 |
+\end{DoxyVerb}
+
+
+\begin{DoxySeeAlso}{See also}
+\mbox{\hyperlink{calculator_8h}{calculator.\+h}} 接口定义 
+\end{DoxySeeAlso}
+
+
+\doxysubsection{Enumeration Type Documentation}
+\mbox{\Hypertarget{calculator_8cpp_afa95821de9590840a05b22bfee959940}\label{calculator_8cpp_afa95821de9590840a05b22bfee959940}} 
+\index{calculator.cpp@{calculator.cpp}!FuncType@{FuncType}}
+\index{FuncType@{FuncType}!calculator.cpp@{calculator.cpp}}
+\doxysubsubsection{\texorpdfstring{FuncType}{FuncType}}
+{\footnotesize\ttfamily enum \mbox{\hyperlink{calculator_8cpp_afa95821de9590840a05b22bfee959940}{Func\+Type}}}
+
+
+
+支持的数学函数类型枚举 
+

@@ -1,0 +1,127 @@
+\hypertarget{main_8cpp}{}\doxysection{main.\+cpp File Reference}
+\label{main_8cpp}\index{main.cpp@{main.cpp}}
+
+
+图形界面计算器 (Win32 G\+UI)  
+
+
+{\ttfamily \#include $<$windows.\+h$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+{\ttfamily \#include $<$fstream$>$}\newline
+{\ttfamily \#include $<$sstream$>$}\newline
+{\ttfamily \#include $<$cmath$>$}\newline
+{\ttfamily \#include $<$cstring$>$}\newline
+{\ttfamily \#include \char`\"{}calculator.\+h\char`\"{}}\newline
+\doxysubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum \mbox{\hyperlink{main_8cpp_a85d3efb4ddadc5f8c1a185fde611cd63}{Log\+Input\+Stage}} 
+\item 
+enum 
+\item 
+enum 
+\item 
+enum 
+\item 
+enum \mbox{\hyperlink{main_8cpp_ac4247686c19d0ac3843a6957f97211db}{Btn\+Action}} 
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int W\+I\+N\+A\+PI \mbox{\hyperlink{main_8cpp_a4e268beef847d641737a84158cd3ff66}{w\+Win\+Main}} (H\+I\+N\+S\+T\+A\+N\+CE h\+Instance, H\+I\+N\+S\+T\+A\+N\+CE, P\+W\+S\+TR, int n\+Cmd\+Show)
+\begin{DoxyCompactList}\small\item\em 应用程序入口点 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+图形界面计算器 (Win32 G\+UI) 
+
+\begin{DoxyAuthor}{Author}
+裴振羽 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+2026-\/08-\/27 
+\end{DoxyDate}
+\begin{DoxyVersion}{Version}
+1.\+0.\+0
+\end{DoxyVersion}
+基于 Win32 A\+PI 的图形界面计算器。 核心计算复用 \mbox{\hyperlink{calculator_8h}{calculator.\+h}}/calculator.cpp 的表达式求值模块。
+
+主要功能：
+\begin{DoxyItemize}
+\item 可视化按钮输入（数字、运算符、函数）
+\item 实时显示表达式和计算结果
+\item 历史记录管理（查看、搜索、删除、清空）
+\item 菜单栏（历史管理、使用说明）
+\end{DoxyItemize}
+
+历史记录存储：history.\+txt（与表达式同一目录） 格式：每行为 \char`\"{}表达式 = 结果\char`\"{}
+
+\begin{DoxyNote}{Note}
+采用 Unicode (U\+T\+F-\/16) 作为窗口字符串编码， 内部核心使用 U\+T\+F-\/8/\+A\+S\+C\+I\+I，通过 utf8\+To\+Wide/wide\+To\+Utf8 转换。 
+\end{DoxyNote}
+
+
+\doxysubsection{Enumeration Type Documentation}
+\mbox{\Hypertarget{main_8cpp_a06fc87d81c62e9abb8790b6e5713c55b}\label{main_8cpp_a06fc87d81c62e9abb8790b6e5713c55b}} 
+\doxysubsubsection{\texorpdfstring{anonymous enum}{anonymous enum}}
+{\footnotesize\ttfamily anonymous enum}
+
+\mbox{\Hypertarget{main_8cpp_adf764cbdea00d65edcd07bb9953ad2b7}\label{main_8cpp_adf764cbdea00d65edcd07bb9953ad2b7}} 
+\doxysubsubsection{\texorpdfstring{anonymous enum}{anonymous enum}}
+{\footnotesize\ttfamily anonymous enum}
+
+\mbox{\Hypertarget{main_8cpp_a99fb83031ce9923c84392b4e92f956b5}\label{main_8cpp_a99fb83031ce9923c84392b4e92f956b5}} 
+\doxysubsubsection{\texorpdfstring{anonymous enum}{anonymous enum}}
+{\footnotesize\ttfamily anonymous enum}
+
+\mbox{\Hypertarget{main_8cpp_ac4247686c19d0ac3843a6957f97211db}\label{main_8cpp_ac4247686c19d0ac3843a6957f97211db}} 
+\index{main.cpp@{main.cpp}!BtnAction@{BtnAction}}
+\index{BtnAction@{BtnAction}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{BtnAction}{BtnAction}}
+{\footnotesize\ttfamily enum \mbox{\hyperlink{main_8cpp_ac4247686c19d0ac3843a6957f97211db}{Btn\+Action}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\mbox{\Hypertarget{main_8cpp_a85d3efb4ddadc5f8c1a185fde611cd63}\label{main_8cpp_a85d3efb4ddadc5f8c1a185fde611cd63}} 
+\index{main.cpp@{main.cpp}!LogInputStage@{LogInputStage}}
+\index{LogInputStage@{LogInputStage}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{LogInputStage}{LogInputStage}}
+{\footnotesize\ttfamily enum \mbox{\hyperlink{main_8cpp_a85d3efb4ddadc5f8c1a185fde611cd63}{Log\+Input\+Stage}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{main_8cpp_a4e268beef847d641737a84158cd3ff66}\label{main_8cpp_a4e268beef847d641737a84158cd3ff66}} 
+\index{main.cpp@{main.cpp}!wWinMain@{wWinMain}}
+\index{wWinMain@{wWinMain}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{wWinMain()}{wWinMain()}}
+{\footnotesize\ttfamily int W\+I\+N\+A\+PI w\+Win\+Main (\begin{DoxyParamCaption}\item[{H\+I\+N\+S\+T\+A\+N\+CE}]{h\+Instance,  }\item[{H\+I\+N\+S\+T\+A\+N\+CE}]{,  }\item[{P\+W\+S\+TR}]{,  }\item[{int}]{n\+Cmd\+Show }\end{DoxyParamCaption})}
+
+
+
+应用程序入口点 
+
+
+\begin{DoxyParams}{Parameters}
+{\em h\+Instance} & 应用程序实例句柄 \\
+\hline
+{\em h\+Prev\+Instance} & 前一实例句柄（\+Win32 中始终为 N\+U\+L\+L） \\
+\hline
+{\em lp\+Cmd\+Line} & 命令行参数（未使用） \\
+\hline
+{\em n\+Cmd\+Show} & 窗口显示方式 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+退出码
+\end{DoxyReturn}
+执行流程：
+\begin{DoxyEnumerate}
+\item 注册主窗口类和历史窗口类
+\item 创建菜单栏
+\item 创建主窗口
+\item 进入消息循环
+\end{DoxyEnumerate}
+
+\begin{DoxyNote}{Note}
+Windows 环境下，\+G\+UI 应用程序的入口应为 w\+Win\+Main（\+Unicode 版本） 
+\end{DoxyNote}

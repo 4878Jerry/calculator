@@ -1,0 +1,40 @@
+\hypertarget{calculator_8h}{}\doxysection{calculator.\+h File Reference}
+\label{calculator_8h}\index{calculator.h@{calculator.h}}
+
+
+简易计算器核心接口定义  
+
+
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$stdexcept$>$}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{class_calculator}{Calculator}}
+\begin{DoxyCompactList}\small\item\em 科学计算器核心类 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+简易计算器核心接口定义 
+
+\begin{DoxyAuthor}{Author}
+裴振羽 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+2026-\/08-\/27 
+\end{DoxyDate}
+\begin{DoxyVersion}{Version}
+1.\+0.\+0
+\end{DoxyVersion}
+本文件定义了 \mbox{\hyperlink{class_calculator}{Calculator}} 类，该类是计算器核心功能的唯一对外接口。 内部采用表达式二叉树（\+A\+S\+T）和递归下降解析器实现表达式求值。
+
+支持的运算：
+\begin{DoxyItemize}
+\item 四则运算：+ -\/ $\ast$ /
+\item 括号：()
+\item 幂运算：$^\wedge$（右结合，优先级高于乘除）
+\item 一元正负号：+ -\/
+\item 数学函数：sin, cos, tan, ln, log, exp, sqrt
+\end{DoxyItemize}
+
+函数调用支持大小写不敏感，如 sin(30) 和 S\+I\+N(30) 均可。 

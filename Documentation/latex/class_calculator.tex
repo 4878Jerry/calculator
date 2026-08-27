@@ -1,0 +1,95 @@
+\hypertarget{class_calculator}{}\doxysection{Calculator Class Reference}
+\label{class_calculator}\index{Calculator@{Calculator}}
+
+
+科学计算器核心类  
+
+
+
+
+{\ttfamily \#include $<$calculator.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+double \mbox{\hyperlink{class_calculator_abcd654bf0c82a36dcbce737b5e8f78eb}{evaluate}} (const std\+::string \&expression)
+\begin{DoxyCompactList}\small\item\em 计算表达式的值 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+科学计算器核心类 
+
+该类封装了表达式的语法分析、语法树构建和求值全过程。 使用递归下降解析器将输入的字符串表达式解析为抽象语法树（\+A\+S\+T）， 然后递归遍历 A\+ST 计算出最终结果。
+
+\begin{DoxyNote}{Note}
+所有异常通过 std\+::runtime\+\_\+error 抛出，调用者需捕获处理。 
+\end{DoxyNote}
+\begin{Desc}
+\item[Examples]\par
+\mbox{\hyperlink{_c_1_2_users_2_xE4_xBC_xA6_xE5_x8F_xAF_2_desktop_2_xE7_xAC_xAC_xE4_xB8_x89_xE6_xAC_xA1_xE4_xBD_x2f6e90fbcb1288250ea89f84d8f87308}{C\+:/\+Users/伦可/\+Desktop/第三次作业/calculator/calculator/calculator.\+h}}.\end{Desc}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_calculator_abcd654bf0c82a36dcbce737b5e8f78eb}\label{class_calculator_abcd654bf0c82a36dcbce737b5e8f78eb}} 
+\index{Calculator@{Calculator}!evaluate@{evaluate}}
+\index{evaluate@{evaluate}!Calculator@{Calculator}}
+\doxysubsubsection{\texorpdfstring{evaluate()}{evaluate()}}
+{\footnotesize\ttfamily double Calculator\+::evaluate (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{expression }\end{DoxyParamCaption})}
+
+
+
+计算表达式的值 
+
+\mbox{\hyperlink{class_calculator_abcd654bf0c82a36dcbce737b5e8f78eb}{Calculator\+::evaluate}} 的实现
+
+
+\begin{DoxyParams}{Parameters}
+{\em expression} & 待求值的数学表达式，格式为字符串。 支持的语法规则：
+\begin{DoxyItemize}
+\item 数字：整数或浮点数，如 123, 3.\+14
+\item 四则运算：+ -\/ $\ast$ /，支持括号改变优先级
+\item 幂运算：$^\wedge$，右结合，如 2$^\wedge$3$^\wedge$2 = 2$^\wedge$(3$^\wedge$2)
+\item 一元正负号：+3, -\/5
+\item 函数调用：函数名(参数)，如 sin(30)
+\item 多参数函数：log(底数, 真数)
+\end{DoxyItemize}\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+表达式的计算结果，类型为 double
+\end{DoxyReturn}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em std\+::runtime\+\_\+error} & 在以下情况会抛出异常：
+\begin{DoxyItemize}
+\item 表达式语法错误（如括号不匹配、未知字符）
+\item 除数为零
+\item 函数定义域错误（如 ln(0)、sqrt(-\/1)）
+\item 未知函数名
+\item 负数底数进行非整数次幂运算
+\item 对数底数 ≤ 0 或 = 1
+\end{DoxyItemize}\\
+\hline
+\end{DoxyExceptions}
+\begin{DoxyNote}{Note}
+三角函数 sin/cos/tan 的参数采用角度制（度）， 如 sin(30) 返回 0.\+5
+\end{DoxyNote}
+\begin{DoxySeeAlso}{See also}
+\href{https://en.wikipedia.org/wiki/Recursive_descent_parser}{\texttt{ https\+://en.\+wikipedia.\+org/wiki/\+Recursive\+\_\+descent\+\_\+parser}}
+\end{DoxySeeAlso}
+执行流程：
+\begin{DoxyEnumerate}
+\item 创建 Parser 实例解析表达式
+\item 得到抽象语法树（\+A\+S\+T）的根结点
+\item 调用 eval 递归求值
+\item 释放 A\+ST 内存
+\item 返回结果 
+\end{DoxyEnumerate}\begin{Desc}
+\item[Examples]\par
+\mbox{\hyperlink{_c_1_2_users_2_xE4_xBC_xA6_xE5_x8F_xAF_2_desktop_2_xE7_xAC_xAC_xE4_xB8_x89_xE6_xAC_xA1_xE4_xBD_x2f6e90fbcb1288250ea89f84d8f87308}{C\+:/\+Users/伦可/\+Desktop/第三次作业/calculator/calculator/calculator.\+h}}.\end{Desc}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{calculator_8h}{calculator.\+h}}\item 
+\mbox{\hyperlink{calculator_8cpp}{calculator.\+cpp}}\end{DoxyCompactItemize}

@@ -1,0 +1,48 @@
+[OPTIONS]
+Compatibility=1.1
+Full-text search=Yes
+Contents file=index.hhc
+Default Window=main
+Default topic=index.html
+Index file=index.hhk
+Language=0x409 English (United States)
+Title=Calculator documentation
+
+[WINDOWS]
+main="Calculator documentation","index.hhc","index.hhk","index.html","index.html",,,,,0x23520,,0x10387e,,,,,,,,0
+
+[FILES]
+_c_1_2_users_2_xE4_xBC_xA6_xE5_x8F_xAF_2_desktop_2_xE7_xAC_xAC_xE4_xB8_x89_xE6_xAC_xA1_xE4_xBD_x2f6e90fbcb1288250ea89f84d8f87308.html
+calculator_8h_source.html
+calculator_8cpp.html
+calculator_8h.html
+main_8cpp.html
+_xE6_xBA_x90_xE7_xA5_x9E_8cpp.html
+class_calculator.html
+class_calculator-members.html
+namespace_xE5_x8C_xBF_xE5_x90_x8D.html
+index.html
+namespaces.html
+annotated.html
+classes.html
+functions.html
+functions_func.html
+files.html
+globals.html
+globals_func.html
+globals_vars.html
+globals_enum.html
+examples.html
+tab_a.png
+tab_b.png
+tab_h.png
+tab_s.png
+nav_h.png
+nav_f.png
+bc_s.png
+doxygen.png
+closed.png
+open.png
+bdwn.png
+sync_on.png
+sync_off.png
