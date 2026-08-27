@@ -19,13 +19,9 @@
  */
 
 #pragma once
-<<<<<<< HEAD
-=======
 
 #include <string>
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
 #include <stdexcept>
-#include <string>
 
 /**
  * @class   Calculator

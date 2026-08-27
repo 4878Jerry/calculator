@@ -27,11 +27,11 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <cstring>
 #include "calculator.h"
 
 namespace {
 
-<<<<<<< HEAD
 // 自定义底数对数(log_a)的分步输入状态。
 // 用户依次输入: log_a -> 底数 -> log_a -> 真数 -> ')' -> '='。
 // 第一次按下 log_a 输入 "log(", 等待用户输入底数;
@@ -46,12 +46,6 @@ HINSTANCE g_hInst = nullptr;
 std::string g_expr;                  // 当前正在编辑的表达式(ASCII)
 HFONT g_hDisplayFont = nullptr;      // 表达式显示框字体(WM_DESTROY 时释放)
 LogInputStage g_logStage = LogInputStage::Normal;  // log_a 分步输入状态
-=======
-// ===================== 全局状态 =====================
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
-
-HINSTANCE g_hInst = nullptr;       ///< 应用程序实例句柄
-std::string g_expr;                ///< 当前正在编辑的表达式 (UTF-8/ASCII)
 
 // ===================== 常量定义 =====================
 
@@ -101,7 +95,6 @@ const int CLIENT_W = MARGIN * 2 + COLS * BTN_W + (COLS - 1) * GAP;
 /// 主窗口客户区高度 = 上边距 + 显示框 + 间隔 + 结果框 + 间隔 + 按钮网格 + 下边距
 const int CLIENT_H = MARGIN + DISPLAY_H + SPACE + RESULT_H + SPACE + ROWS * BTN_H + (ROWS - 1) * GAP + MARGIN;
 
-<<<<<<< HEAD
 // 历史窗口布局
 const int HIST_W = 400, HIST_H = 390;
 const int HIST_MARGIN = 12;
@@ -113,9 +106,6 @@ const int HIST_LIST_W = HIST_W - 2 * HIST_MARGIN;                // 376
 const int HIST_LIST_H = 290;
 const int HIST_ACTION_Y = HIST_LIST_TOP + HIST_LIST_H + 8;       // 346
 const int HIST_ACTION_W = 96, HIST_ACTION_H = 32;
-=======
-const int HIST_W = 400, HIST_H = 390;      ///< 历史窗口宽/高
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
 
 // ===================== 编码转换工具 =====================
 
@@ -205,7 +195,6 @@ std::string formatNumber(double v) {
     return oss.str();
 }
 
-<<<<<<< HEAD
 // ---------- 按钮定义 ----------
 // 按钮动作类型: 决定按下该按钮时 UI 层如何处理。
 enum class BtnAction {
@@ -224,42 +213,6 @@ struct ButtonDef {
 
 // 6 行 × 5 列按钮布局。其中 "lg" 为常用对数(以 10 为底),
 // "log_a" 为自定义底数对数, 需分两步输入底数与真数。
-=======
-// ===================== 按钮定义 =====================
-
-/**
- * @enum    BtnAction
- * @brief   按钮动作类型
- */
-enum BtnAction { 
-    ACT_INSERT,     ///< 插入文本到表达式
-    ACT_EQUAL,      ///< 执行求值
-    ACT_CLEAR,      ///< 清空表达式
-    ACT_BACKSPACE   ///< 退格删除
-};
-
-/**
- * @struct  ButtonDef
- * @brief   按钮配置结构
- */
-struct ButtonDef {
-    const wchar_t* label;   ///< 按钮显示的文本
-    const char*    text;    ///< ACT_INSERT 时追加到表达式的文本
-    BtnAction      action;  ///< 动作类型
-};
-
-/**
- * @var kButtons
- * @brief   按钮网格定义（按行顺序排列，共 5 列 × 6 行）
- * @details 布局：
- *          第1行：sin  cos  tan  ln   log
- *          第2行：exp  x²   √    ^    log_a
- *          第3行：C    ←    (    )    ÷
- *          第4行：7    8    9    ×    -
- *          第5行：4    5    6    +    =
- *          第6行：1    2    3    0    .
- */
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
 const ButtonDef kButtons[COLS * ROWS] = {
     {L"sin",   "sin(",   BtnAction::Insert},  {L"cos", "cos(", BtnAction::Insert}, {L"tan", "tan(", BtnAction::Insert}, {L"ln",   "ln(",   BtnAction::Insert}, {L"lg",    "log(",  BtnAction::Insert},
     {L"exp",   "exp(",   BtnAction::Insert},  {L"x²",  "^2",   BtnAction::Insert}, {L"√",    "sqrt(", BtnAction::Insert}, {L"^",    "^",     BtnAction::Insert}, {L"log_a", nullptr, BtnAction::LogBase},
@@ -288,7 +241,6 @@ void setResultText(HWND hwnd, const std::string& text) {
     SetDlgItemTextW(hwnd, IDC_RESULT, utf8ToWide(text).c_str());
 }
 
-<<<<<<< HEAD
 // 向表达式追加文本并刷新显示。
 // 追加内容后旧的结算结果不再有效, 因此一并清空结果框。
 void insertText(HWND hwnd, const std::string& text) {
@@ -305,13 +257,11 @@ void clearExpression(HWND hwnd) {
     updateDisplay(hwnd);
 }
 
-=======
 /**
  * @brief   执行表达式求值
  * @param   hwnd    主窗口句柄
  * @note    求值成功后自动追加到历史记录
  */
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
 void evaluateExpr(HWND hwnd) {
     if (g_expr.empty()) return;
     static Calculator calc;   // 核心求值器无状态, 复用单个实例
@@ -324,7 +274,6 @@ void evaluateExpr(HWND hwnd) {
     }
 }
 
-<<<<<<< HEAD
 // 是否属于 log_a 分步输入中的"数字/小数点"按键。
 // 只有在输入底数或真数的数字时, log_a 的输入状态才保持不变,
 // 这样第二次按下 log_a 才会在底数后补上逗号。
@@ -353,13 +302,6 @@ void resetLogStageIfNeeded() {
 }
 
 // 统一处理一次按钮点击。
-=======
-/**
- * @brief   处理按钮点击事件
- * @param   hwnd    主窗口句柄
- * @param   idx     按钮索引 (0 ~ COLS*ROWS-1)
- */
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
 void handleButton(HWND hwnd, int idx) {
     const ButtonDef& b = kButtons[idx];
     switch (b.action) {
@@ -389,20 +331,11 @@ void handleButton(HWND hwnd, int idx) {
     }
 }
 
-<<<<<<< HEAD
-// ---------- 历史窗口 ----------
+// ===================== 历史记录窗口 =====================
+
 // 把历史记录填充到列表;keyword 非空时只保留包含关键字的记录。
 // 行首序号(i+1)是记录在文件中的原始位置, 删除时据此定位。
 void populateHistoryList(HWND hwnd, const std::string& keyword) {
-=======
-// ===================== 历史记录窗口 =====================
-
-/**
- * @brief   刷新历史记录列表
- * @param   hwnd    历史窗口句柄
- */
-void refreshHistoryList(HWND hwnd) {
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
     HWND list = GetDlgItem(hwnd, IDH_LIST);
     SendMessageW(list, LB_RESETCONTENT, 0, 0);
     auto recs = loadHistory();
@@ -415,19 +348,7 @@ void refreshHistoryList(HWND hwnd) {
     }
 }
 
-<<<<<<< HEAD
 void refreshHistoryList(HWND hwnd) { populateHistoryList(hwnd, ""); }
-=======
-/**
- * @brief   搜索历史记录
- * @param   hwnd    历史窗口句柄
- * @note    根据搜索框内容筛选列表，显示包含关键词的记录
- */
-void searchHistory(HWND hwnd) {
-    wchar_t buf[256];
-    GetDlgItemTextW(hwnd, IDH_SEARCH, buf, 256);
-    std::string kw = wideToUtf8(buf);
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
 
 // 弹出确认框询问是否清空历史;返回是否已确认清空。
 bool confirmClearHistory(HWND hwnd) {
@@ -489,19 +410,11 @@ LRESULT CALLBACK HistWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 HIST_SEARCH_BTN_X, HIST_MARGIN - 2, HIST_BTN_W, HIST_BTN_H,
                 hwnd, (HMENU)IDH_BTN_SEARCH, g_hInst, nullptr);
             CreateWindowW(L"BUTTON", L"全部", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-<<<<<<< HEAD
                 HIST_SEARCH_BTN_X + HIST_BTN_W + 4, HIST_MARGIN - 2, HIST_BTN_W, HIST_BTN_H,
                 hwnd, (HMENU)IDH_BTN_ALL, g_hInst, nullptr);
             CreateWindowW(L"LISTBOX", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
                 HIST_MARGIN, HIST_LIST_TOP, HIST_LIST_W, HIST_LIST_H,
                 hwnd, (HMENU)IDH_LIST, g_hInst, nullptr);
-=======
-                324, 10, 64, 30, hwnd, (HMENU)IDH_BTN_ALL, g_hInst, nullptr);
-            // 历史列表
-            CreateWindowW(L"LISTBOX", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
-                12, 48, 376, 290, hwnd, (HMENU)IDH_LIST, g_hInst, nullptr);
-            // 操作按钮
->>>>>>> e165bd5 (docs: 为第三次作业添加完整的 Doxygen 风格代码注释)
             CreateWindowW(L"BUTTON", L"删除选中", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
                 HIST_MARGIN, HIST_ACTION_Y, HIST_ACTION_W, HIST_ACTION_H,
                 hwnd, (HMENU)IDH_BTN_DELETE, g_hInst, nullptr);
